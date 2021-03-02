@@ -9,7 +9,7 @@ from .Postgres import *
 class UserSQL:
 
     def __init__(self) -> None:
-        self.TABLE_NAME = 'posts_user'
+        self.TABLE_NAME = 'posts_user_1'
     
     def checkTableExistance(self):
         connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
@@ -27,15 +27,33 @@ class UserSQL:
                     print("Table exists!\n")   
         return return_flag
 
-    def insert(self, username,password):        
+
+    def createTable(self):
+        if self.checkTableExistance():                    
+            print("Table already exists!\n")
+            return
+        connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
+        checkTableSQLStatement = f"CREATE TABLE {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY,\
+                                                                    username VARCHAR(150) NOT NULL UNIQUE,\
+                                                                    password VARCHAR (40) NOT NULL)"
+        with connection:
+            with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                cursor.execute(checkTableSQLStatement)
+                print(f"Table added.\n")
+
+
+    def insert(self, username,password):
+
+        if not self.checkTableExistance():                    
+            self.createTable()
+
         connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
 
-        checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY ,username VARCHAR(150) NOT NULL UNIQUE, password VARCHAR (40) NOT NULL)"
+        # checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY ,username VARCHAR(150) NOT NULL UNIQUE, password VARCHAR (40) NOT NULL)"
         insertSQLStatement = f"INSERT INTO {self.TABLE_NAME} (username, password) VALUES (%s, %s)"
         
         with connection:
             with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                cursor.execute(checkTableSQLStatement)
                 cursor.execute(insertSQLStatement,(username,password,))
                 iserted_numbers = cursor.rowcount
                 print(f"{iserted_numbers} User added.\n")

@@ -24,6 +24,7 @@ while True:
             obj_json = jsonSQL.JsonSQL()
         elif modeInput == 2:
             userInput = int(input(f"\
+            0 -> Create {mode[modeInput]} table\n\
             1 -> Insert {mode[modeInput]}\n\
             2 -> Find {mode[modeInput]} by ID\n\
             3 -> Alter {mode[modeInput]}\n\
@@ -57,8 +58,11 @@ while True:
             7 -> Find certain number of {mode[modeInput]}s\n\
             9 -> Check Username and Password of a {mode[modeInput]}s\n"))
             obj =   userSQL.UserSQL()
+        
+        if userInput == 0:
+            obj.createTable()
 
-        if userInput == 1:
+        elif userInput == 1:
             if modeInput == 5:
                 username = input("Enter the username\t")
                 password = input("Enter the password\t")

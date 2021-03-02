@@ -7,7 +7,7 @@ from .Postgres import *
 class CompanySQL:
 
     def __init__(self) -> None:
-        self.TABLE_NAME = 'posts_company'
+        self.TABLE_NAME = 'posts_company_1'
     
     def checkTableExistance(self):
         connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
@@ -25,15 +25,30 @@ class CompanySQL:
                     print("Table exists!\n")   
         return return_flag
 
-    def insert(self, companyName):        
+    def createTable(self):
+        if self.checkTableExistance():                    
+            print("Table already exists!\n")
+            return
+        connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
+        checkTableSQLStatement = f"CREATE TABLE {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY,\
+                                                                    name VARCHAR(1000) NOT NULL)"
+        with connection:
+            with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                cursor.execute(checkTableSQLStatement)
+                print(f"Table added.\n")
+
+
+    def insert(self, companyName):
+        if not self.checkTableExistance():                    
+            self.createTable()
+
         connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
 
-        checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY ,name VARCHAR(1000) NOT NULL)"
+        # checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY ,name VARCHAR(1000) NOT NULL)"
         insertSQLStatement = f"INSERT INTO {self.TABLE_NAME} (name) VALUES (%s)"
         
         with connection:
             with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                cursor.execute(checkTableSQLStatement)
                 cursor.execute(insertSQLStatement,(companyName,))
                 iserted_numbers = cursor.rowcount
                 print(f"{iserted_numbers} Company added.\n")

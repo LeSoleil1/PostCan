@@ -8,9 +8,14 @@ from .Postgres import *
 class JsonSQL:
 
     def __init__(self) -> None:
-        self.TABLE_NAME = 'posts_jsonfiles'
+        self.TABLE_NAME = 'posts_jsonfiles_1'
         self.file_type = {'.json'}
         self.myDirectory = 'media/json'
+
+        self.FOREIGN_TABLE_1 = 'posts_ml_model_1'
+        self.FOREIGN_TABLE_2 = 'posts_videopost_1'
+        self.FOREIGN_TABLE_3 = 'posts_user_1'
+        self.FOREIGN_TABLE_4 = 'posts_company_1'
 
     def checkFileExist(self, filepath):
         return path.exists(filepath)
@@ -34,8 +39,31 @@ class JsonSQL:
                     return_flag = True
                     print("Table exists!\n")   
         return return_flag
+    
+    def createTable(self):
+        if self.checkTableExistance():                    
+            print("Table already exists!\n")
+            return
+        connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
+        checkTableSQLStatement = f"CREATE TABLE {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY,\
+                                                                    json_file VARCHAR(1000) NOT NULL,\
+                                                                    created date NOT NULL,\
+                                                                    condition VARCHAR(30) NOT NULL,\
+                                                                    model_id INTEGER NOT NULL,\
+                                                                    video_id INTEGER NOT NULL,\
+                                                                    user_id INTEGER NOT NULL,\
+                                                                    company_id INTEGER NOT NULL,\
+                                                                    FOREIGN KEY (model_id) REFERENCES {self.FOREIGN_TABLE_1} (id) ON UPDATE CASCADE ON DELETE CASCADE,\
+                                                                    FOREIGN KEY (video_id) REFERENCES {self.FOREIGN_TABLE_2} (id) ON UPDATE CASCADE ON DELETE CASCADE,\
+                                                                    FOREIGN KEY (user_id) REFERENCES {self.FOREIGN_TABLE_3} (id) ON UPDATE CASCADE ON DELETE CASCADE,\
+                                                                    FOREIGN KEY (company_id) REFERENCES {self.FOREIGN_TABLE_4} (id) ON UPDATE CASCADE ON DELETE CASCADE)"
+        with connection:
+            with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                cursor.execute(checkTableSQLStatement)
+                print(f"Table added.\n")
 
-    def insertFile(self, filePath,video_ID , model_ID, condition):
+
+    def insertFile(self, filePath,video_ID , model_ID, condition, company_ID, user_ID):
         if not self.checkFileExist(filePath):
             print("No such file!\n")
             return
@@ -49,6 +77,8 @@ class JsonSQL:
             if self.retreiveFileByPath(filePath) != None:
                 print("File Cannot be added!\n")
                 return
+        else:
+            self.createTable()
 
         with open(filePath, "rb") as file:
             binaryFileRep = file.read()
@@ -56,13 +86,12 @@ class JsonSQL:
             today = date.today().strftime('%Y-%m-%d')
             
 
-            checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY ,json_file VARCHAR(1000) NOT NULL,created date NOT NULL,condition VARCHAR(30) NOT NULL,ML_model_id_id INTEGER NOT NULL,video_id_id INTEGER NOT NULL)"
-            insertSQLStatement = f"INSERT INTO {self.TABLE_NAME} (json_file,created, condition, ML_model_id_id,video_id_id) VALUES (%s, %s, %s, %s, %s)"
+            # checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY ,json_file VARCHAR(1000) NOT NULL,created date NOT NULL,condition VARCHAR(30) NOT NULL,ML_model_id_id INTEGER NOT NULL,video_id_id INTEGER NOT NULL)"
+            insertSQLStatement = f"INSERT INTO {self.TABLE_NAME} (json_file,created, condition, ML_model_id,video_id, user_id, company_id) VALUES (%s, %s, %s, %s, %s, %s, %s)"
             
             with connection:
                 with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                    cursor.execute(checkTableSQLStatement)
-                    cursor.execute(insertSQLStatement,(filePath,today,condition,model_ID,video_ID,))
+                    cursor.execute(insertSQLStatement,(filePath,today,condition,model_ID,video_ID,user_ID,company_ID,))
                     iserted_numbers = cursor.rowcount
                     print(f"{iserted_numbers} File inserted.\n")
 

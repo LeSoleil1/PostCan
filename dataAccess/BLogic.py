@@ -1,4 +1,23 @@
 from dataAccess import companySQL, videoSQL,jsonSQL,MLModelSQL,userSQL
+from datetime import date, datetime
+
+
+def create_Tables():
+    company = companySQL.CompanySQL()
+    company.createTable()
+
+    user = userSQL.UserSQL()
+    user.createTable()
+
+    ml_model = MLModelSQL.MLModelSQL()
+    ml_model.createTable()
+
+    video = videoSQL.VideoSQL()
+    video.createTable()
+
+    json = jsonSQL.JsonSQL()
+    json.createTable()
+
 
 def addCompnay(company_name):
     obj = companySQL.CompanySQL()
@@ -20,11 +39,14 @@ def videoImport(title, description, filePath, thumbnail, category, company_id, u
     filename = filename_2_store + '_' + str(company_id)
     obj.storeFileLocally(id, filename)
 
-def jsonImport(filePath,video_ID , model_ID, condition,filename_2_store):
+
+def jsonImport(filePath,video_ID , model_ID, condition,company_id,user_id, filename_2_store):
     obj = jsonSQL.JsonSQL()
-    obj.insertFile(filePath,video_ID , model_ID, condition)
+    obj.insertFile(filePath,video_ID , model_ID, condition,company_id,user_id)
     id = obj.retreiveFileByPath(filePath)
-    obj.storeFileLocally(id, filename_2_store)
+    date_time =datetime.now().strftime('%Y-%m-%d--%H-%M-%S')
+    filename = filename_2_store + '_' + date_time
+    obj.storeFileLocally(id, filename)
 
 def getLatestJsonFile(video_path):
     obj_video = videoSQL.VideoSQL()

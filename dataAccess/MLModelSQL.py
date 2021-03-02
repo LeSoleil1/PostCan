@@ -9,7 +9,7 @@ from .Postgres import *
 class MLModelSQL:
 
     def __init__(self) -> None:
-        self.TABLE_NAME = 'posts_ml_model'
+        self.TABLE_NAME = 'posts_ml_model_1'
         self.file_type = {'.sav'}
         self.myDirectory = 'media/ml_model'
 
@@ -35,6 +35,23 @@ class MLModelSQL:
                     return_flag = True
                     print("Table exists!\n")   
         return return_flag
+    
+    
+    def createTable(self):
+        if self.checkTableExistance():                    
+            print("Table already exists!\n")
+            return
+        connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
+        checkTableSQLStatement = f"CREATE TABLE {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY,\
+                                                                    model_file VARCHAR(100) NOT NULL,\
+                                                                    description TEXT NOT NULL,\
+                                                                    created date NOT NULL,\
+                                                                    modified date NOT NULL)"
+        with connection:
+            with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                cursor.execute(checkTableSQLStatement)
+                print(f"Table added.\n")
+
 
     def insertFile(self, filePath,description='Test Description'):
         if not self.checkFileExist(filePath):
@@ -50,6 +67,8 @@ class MLModelSQL:
             if self.retreiveFileByPath(filePath) != None:
                 print("File Cannot be added!\n")
                 return
+        else:
+            self.createTable()
 
         with open(filePath, "rb") as file:
             binaryFileRep = file.read()
@@ -57,15 +76,15 @@ class MLModelSQL:
             today = date.today().strftime('%Y-%m-%d')
             
 
-            checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY ,model_file VARCHAR(100) NOT NULL,description TEXT NOT NULL,created date NOT NULL,modified date NOT NULL)"
+            # checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY ,model_file VARCHAR(100) NOT NULL,description TEXT NOT NULL,created date NOT NULL,modified date NOT NULL)"
             insertSQLStatement = f"INSERT INTO {self.TABLE_NAME} (model_file, description, created, modified) VALUES (%s, %s, %s, %s)"
             
             with connection:
                 with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                    cursor.execute(checkTableSQLStatement)
                     cursor.execute(insertSQLStatement,(filePath,description,today,today,))
                     iserted_numbers = cursor.rowcount
                     print(f"{iserted_numbers} File inserted.\n")
+
 
     def retreiveFileByPath(self,filePath):
         if not self.checkTableExistance():

@@ -8,9 +8,13 @@ from .Postgres import *
 class VideoSQL:
 
     def __init__(self) -> None:
-        self.TABLE_NAME = 'posts_videopost'
+        self.TABLE_NAME = 'posts_videopost_1'
         self.file_type = {'.mp4', '.avi','.mov'}
         self.myDirectory = 'media/videos'
+
+        self.FOREIGN_TABLE_1 = 'posts_company_1'
+        self.FOREIGN_TABLE_2 = 'posts_user_1'
+
 
     def checkFileExist(self, filepath):
         return path.exists(filepath)
@@ -21,7 +25,7 @@ class VideoSQL:
     
     def checkTableExistance(self):
         connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
-
+ 
         checkTableSQLStatement = f"SELECT to_regclass('{SCHEMA_NAME}.{self.TABLE_NAME}')"
         with connection:
             with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
@@ -34,6 +38,27 @@ class VideoSQL:
                     return_flag = True
                     print("Table exists!\n")   
         return return_flag
+
+    def createTable(self):
+        if self.checkTableExistance():                    
+            print("Table already exists!\n")
+            return
+        connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
+        checkTableSQLStatement = f"CREATE TABLE {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY,\
+                                                                    title TEXT NOT NULL ,\
+                                                                    description VARCHAR(100) NOT NULL,\
+                                                                    video_file VARCHAR(100) NOT NULL,\
+                                                                    thumbnail VARCHAR(100),\
+                                                                    category VARCHAR(50) NOT NULL,\
+                                                                    created date NOT NULL,\
+                                                                    company_id INTEGER NOT NULL,\
+                                                                    user_id INTEGER NOT NULL,\
+                                                                    FOREIGN KEY (company_id) REFERENCES {self.FOREIGN_TABLE_1} (id) ON UPDATE CASCADE ON DELETE CASCADE,\
+                                                                    FOREIGN KEY (user_id) REFERENCES {self.FOREIGN_TABLE_2} (id) ON UPDATE CASCADE ON DELETE CASCADE)"
+        with connection:
+            with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                cursor.execute(checkTableSQLStatement)
+                print(f"Table added.\n")
 
     def insertFile(self, title, description, filePath, thumbnail, category, company_id, user_id):
         if not self.checkFileExist(filePath):
@@ -49,18 +74,19 @@ class VideoSQL:
             if self.retreiveFileByPath(filePath) != None:
                 print("File Cannot be added!\n")
                 return
+        else:
+            self.createTable()
         
         with open(filePath, "rb") as file:
             binaryFileRep = file.read()
             connection = psycopg2.connect(dbname = NAME, user = USER, password = PASSWORD, host = HOST, port = PORT)
             today = date.today().strftime('%Y-%m-%d')
 
-            checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY, title TEXT NOT NULL ,description VARCHAR(100) NOT NULL ,video_file VARCHAR(100) NOT NULL, thumbnail VARCHAR(100), category VARCHAR(50) NOT NULL,created date NOT NULL, company_id_id INTEGER NOT NULL,user_id INTEGER NOT NULL)"
+            # checkTableSQLStatement = f"CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (id SERIAL NOT NULL PRIMARY KEY, title TEXT NOT NULL ,description VARCHAR(100) NOT NULL ,video_file VARCHAR(100) NOT NULL, thumbnail VARCHAR(100), category VARCHAR(50) NOT NULL,created date NOT NULL, company_id_id INTEGER NOT NULL,user_id INTEGER NOT NULL)"
             insertSQLStatement = f"INSERT INTO {self.TABLE_NAME} (title, description,video_file,thumbnail, category,created,company_id, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s,%5)"
             
             with connection:
                 with connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                    cursor.execute(checkTableSQLStatement)
                     cursor.execute(insertSQLStatement,(title, description,filePath,thumbnail, category,today,company_id, user_id,))
                     iserted_numbers = cursor.rowcount
                     print(f"{iserted_numbers} File inserted.\n")
