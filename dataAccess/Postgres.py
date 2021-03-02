@@ -1,6 +1,0 @@
-NAME ='ODetection'
-USER = 'postgres'
-PASSWORD = '2s3ASj@$pALG_aj'
-HOST = 'localhost'
-PORT = '5432'
-SCHEMA_NAME = 'public' 
